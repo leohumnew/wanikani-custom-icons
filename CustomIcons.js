@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WK Custom Icons
 // @namespace    http://tampermonkey.net/
-// @version      0.1.1
+// @version      0.1.3
 // @description  Library with SVG icons and construction functions for use in scripts.
 // @author       leohumnew
 // @match        https://www.wanikani.com/*
@@ -16,7 +16,7 @@
     class Icons {
         static customIconTxt(iconName) {
             return `
-            <svg class="custom-icon wk-icon" viewBox="0 0 512 512">
+            <svg class="wk-icon" viewBox="0 0 512 512">
                 <use href="#custom-icon__${iconName}"></use>
             </svg>
             `;
@@ -25,7 +25,7 @@
             let  svgns = "http://www.w3.org/2000/svg";
 
             let icon = document.createElementNS(svgns, "svg");
-            icon.setAttribute("class", "custom-icon wk-icon");
+            icon.setAttribute("class", "wk-icon");
             icon.setAttributeNS(svgns, "viewBox", "0 0 512 512");
 
             let use = document.createElementNS(svgns, 'use');
@@ -37,6 +37,12 @@
 
         static setUpSVGElements() {
             if(document.getElementById("customSVGSprites")) return;
+
+            let style = document.createElement("style");
+            style.innerHTML = `
+            .wk-icon { width: var(--icon-height, 1em) }
+            `;
+            document.head.appendChild(style);
 
             let svgns = "http://www.w3.org/2000/svg";
 
