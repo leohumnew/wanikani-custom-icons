@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         WK Custom Icons
 // @namespace    http://tampermonkey.net/
-// @version      0.1.8
+// @version      0.2.0
 // @description  Library with SVG icons and construction functions for use in scripts.
 // @author       leohumnew
 // @match        https://www.wanikani.com/*
 // @match        https://community.wanikani.com/*
+// @grant        none
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=wanikani.com
 // @license      MIT
 // ==/UserScript==
@@ -122,4 +123,6 @@
 
     window.Icons = Icons;
     Icons.setUpSVGElements();
+
+    document.addEventListener("turbo:load", Icons.setUpSVGElements);
 })();
