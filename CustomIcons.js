@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WK Custom Icons
 // @namespace    http://tampermonkey.net/
-// @version      0.3.0
+// @version      0.3.2
 // @description  Library with SVG icons and construction functions for use in scripts.
 // @author       leohumnew
 // @match        https://www.wanikani.com/*
@@ -14,50 +14,49 @@
 (function() {
     'use strict';
 
-    const VERSION_NUM = 30;
-
     class Icons {
+        static VERSION_NUM = 31;
+
         static customIconTxt(iconName) {
-            return `
-            <svg class="wk-icon" viewBox="0 0 576 512">
-                <use href="#custom-icon-v${VERSION_NUM}__${iconName}"></use>
-            </svg>
-            `;
+            return this.customIcon(iconName).outerHTML;
         }
         static customIcon(iconName) {
-            let  svgns = "http://www.w3.org/2000/svg";
+            let svgns = "http://www.w3.org/2000/svg";
+            let id = "custom-icon-v" + this.VERSION_NUM + "__" + iconName;
+            let box = document.getElementById(id)?.getAttribute("viewBox") || "0 0 512 512";
 
             let icon = document.createElementNS(svgns, "svg");
             icon.setAttribute("class", "wk-icon");
-            icon.setAttributeNS(svgns, "viewBox", "0 0 576 512");
+            icon.setAttributeNS(svgns, "viewBox", box);
 
             let use = document.createElementNS(svgns, 'use');
-            use.setAttribute("href", "#custom-icon-v" + VERSION_NUM + "__" + iconName);
+            use.setAttribute("href", "#" + id);
             icon.appendChild(use);
             
             return icon;
         }
 
         static addCustomIcons(newIcons) {
-            let customSVGSprites = document.getElementById("customSVGSprites__" + VERSION_NUM);
+            let customSVGSprites = document.getElementById("customSVGSprites__" + this.VERSION_NUM);
             if(!customSVGSprites) return;
             if(newIcons == null || !Array.isArray(newIcons)) {
-                console.error("Invalid icons passed to Icons.addCustomIcons() - not an array. Please pass a 2D array of the form [['icon-name', 'path-data'], ['icon-name', 'path-data', size (def. 512)]].");
+                console.error("Invalid icons passed to Icons.addCustomIcons() - not an array. Please pass a 2D array of the form [['icon-name', 'path-data'], ['icon-name', 'path-data', [width, height] or just size]]");
                 return;
             }
 
-            let idBase = "custom-icon-v" + VERSION_NUM + "__";
-            for(let icon of newIcons) {
+            let idBase = "custom-icon-v" + this.VERSION_NUM + "__";
+            for(let [name, path, box] of newIcons) {
+                if (box != null && !Array.isArray(box)) box = [box, box];
                 customSVGSprites.innerHTML += `
-                <symbol id="${idBase}${icon[0]}" viewBox="0 0 ${icon[2] || 512} ${icon[2] || 512}">
-                    <path d="${icon[1]}"/>
+                <symbol id="${idBase}${name}" viewBox="0 0 ${box[0] || 512} ${box[1] || 512}">
+                    <path d="${path}"/>
                 </symbol>
                 `;
             }
         }
 
         static setUpSVGElements() {
-            if(document.getElementById("customSVGSprites__" + VERSION_NUM)) return;
+            if(document.getElementById("customSVGSprites__" + this.VERSION_NUM)) return;
 
             let iconStyle = document.createElement("style");
             iconStyle.innerHTML = `
@@ -68,10 +67,10 @@
 
             let customSVGSprites = document.createElementNS(svgns, "svg");
             customSVGSprites.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-            customSVGSprites.id = "customSVGSprites__" + VERSION_NUM;
+            customSVGSprites.id = "customSVGSprites__" + this.VERSION_NUM;
             customSVGSprites.style.display = "none";
 
-            let idBase = "custom-icon-v" + VERSION_NUM + "__";
+            let idBase = "custom-icon-v" + this.VERSION_NUM + "__";
             customSVGSprites.innerHTML = /*html*/ `
             <!-- Basic icons -->
             <symbol id="${idBase}arrow-up" viewBox="0 0 448 512">
@@ -86,10 +85,10 @@
             <symbol id="${idBase}chevron-down" viewBox="0 0 512 512">
                 <path d="M233.4 406.6c12.5 12.5 32.8 12.5 45.3 0l192-192c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L256 338.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l192 192z"/>
             </symbol>
-            <symbol id="${idBase}chevron-left" viewBox="0 0 512 512">
+            <symbol id="${idBase}chevron-left" viewBox="0 0 320 512">
                 <path d="M9.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l192 192c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L77.3 256 246.6 86.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-192 192z"/>
             </symbol>
-            <symbol id="${idBase}chevron-right" viewBox="0 0 512 512">
+            <symbol id="${idBase}chevron-right" viewBox="0 0 320 512">
                 <path d="M310.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-192 192c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L242.7 256 73.4 86.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l192 192z"/>
             </symbol>
             <symbol id="${idBase}circle-question" viewBox="0 0 512 512">
@@ -99,16 +98,19 @@
                 <path style="fill:var(--color-icon-secondary,inherit);opacity:var(--icon-secondary-opacity,.4);" d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"/>
                 <path style="fill:var(--color-icon-primary,inherit);opacity:var(--icon-primary-opacity,1);" d="M256 128a32 32 0 1 1 0 64 32 32 0 1 1 0-64zM192 248c0-13.3 10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h24V272H216c-13.3 0-24-10.7-24-24z"/>
             </symbol>
-            <symbol id="${idBase}cross" viewBox="0 0 512 512">
+            <symbol id="${idBase}cross" viewBox="0 0 384 512">
                 <path d="M345 137c9.4-9.4 9.4-24.6 0-33.9s-24.6-9.4-33.9 0l-119 119L73 103c-9.4-9.4-24.6-9.4-33.9 0s-9.4 24.6 0 33.9l119 119L39 375c-9.4 9.4-9.4 24.6 0 33.9s24.6 9.4 33.9 0l119-119L311 409c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-119-119L345 137z"/>
             </symbol>
-            <symbol id="${idBase}check-checked" viewBox="0 0 512 512">
+            <symbol id="${idBase}check-checked" viewBox="0 0 448 512">
                 <path d="M64 80c-8.8 0-16 7.2-16 16V416c0 8.8 7.2 16 16 16H384c8.8 0 16-7.2 16-16V96c0-8.8-7.2-16-16-16H64zM0 96C0 60.7 28.7 32 64 32H384c35.3 0 64 28.7 64 64V416c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V96zM337 209L209 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L303 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
             </symbol>
-            <symbol id="${idBase}plus" viewBox="0 0 512 512">
+            <symbol id="${idBase}check-unchecked" viewBox="0 0 448 512">
+                <path d="M384 80c8.8 0 16 7.2 16 16V416c0 8.8-7.2 16-16 16H64c-8.8 0-16-7.2-16-16V96c0-8.8 7.2-16 16-16H384zM64 32C28.7 32 0 60.7 0 96V416c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V96c0-35.3-28.7-64-64-64H64z"/>
+            </symbol>
+            <symbol id="${idBase}plus" viewBox="0 0 448 512">
                 <path d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"/>
             </symbol>
-            <symbol id="${idBase}tick" viewBox="0 0 512 512">
+            <symbol id="${idBase}tick" viewBox="0 0 448 512">
                 <path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/>
             </symbol>
             <!-- Other common WK-related icons -->
