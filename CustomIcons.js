@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WK Custom Icons
 // @namespace    http://tampermonkey.net/
-// @version      0.3.2
+// @version      0.3.5
 // @description  Library with SVG icons and construction functions for use in scripts.
 // @author       leohumnew
 // @match        https://www.wanikani.com/*
@@ -15,7 +15,15 @@
     'use strict';
 
     class Icons {
+        static SCRIPT_VER = "0.3.5";
         static VERSION_NUM = 31;
+
+        static isNewerThan(otherVersion) {
+            if (!otherVersion) return true;
+            let v1 = this.SCRIPT_VER.split(`.`).map(n => parseInt(n));
+            let v2 = otherVersion.split(`.`).map(n => parseInt(n));
+            return v1.reduce((prevVal, currVal, currIndex) => prevVal ?? (currVal === v2[currIndex] ? null : (currVal > (v2[currIndex] || 0))), null) || false;
+        }
 
         static customIconTxt(iconName) {
             return this.customIcon(iconName).outerHTML;
@@ -48,7 +56,7 @@
             for(let [name, path, box] of newIcons) {
                 if (box != null && !Array.isArray(box)) box = [box, box];
                 customSVGSprites.innerHTML += `
-                <symbol id="${idBase}${name}" viewBox="0 0 ${box[0] || 512} ${box[1] || 512}">
+                <symbol id="${idBase}${name}" viewBox="0 0 ${box?.[0] || 512} ${box?.[1] || 512}">
                     <path d="${path}"/>
                 </symbol>
                 `;
@@ -152,9 +160,10 @@
             document.head.append(iconStyle, customSVGSprites);
         }
     }
-
-    window.Icons = Icons;
     Icons.setUpSVGElements();
 
     document.addEventListener("turbo:load", Icons.setUpSVGElements);
+
+    if (window.Icons && !Icons.isNewerThan(window.Icons.SCRIPT_VER)) return;
+    window.Icons = Icons;
 })();
