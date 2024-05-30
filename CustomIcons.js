@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WK Custom Icons
 // @namespace    http://tampermonkey.net/
-// @version      0.3.5
+// @version      0.3.6
 // @description  Library with SVG icons and construction functions for use in scripts.
 // @author       leohumnew
 // @match        https://www.wanikani.com/*
@@ -15,7 +15,7 @@
     'use strict';
 
     class Icons {
-        static SCRIPT_VER = "0.3.5";
+        static SCRIPT_VER = "0.3.6";
         static VERSION_NUM = 31;
 
         static isNewerThan(otherVersion) {
@@ -162,7 +162,7 @@
     }
     Icons.setUpSVGElements();
 
-    document.addEventListener("turbo:load", Icons.setUpSVGElements);
+    document.addEventListener("turbo:load", () => Icons.setUpSVGElements());
 
     if (window.Icons && !Icons.isNewerThan(window.Icons.SCRIPT_VER)) return;
     window.Icons = Icons;
