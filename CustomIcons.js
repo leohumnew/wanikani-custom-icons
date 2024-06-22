@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WK Custom Icons
 // @namespace    http://tampermonkey.net/
-// @version      0.4.3
+// @version      0.4.4
 // @description  Library with SVG icons and construction functions for use in scripts.
 // @author       leohumnew
 // @match        https://www.wanikani.com/*
@@ -15,24 +15,31 @@
     'use strict';
 
     class Icons {
-        static SCRIPT_VER = "0.4.3";
-        static VERSION_NUM = 31;
-        static names = ["arrow-up", "arrow-down", "chevron-up", "chevron-down", "chevron-left", "chevron-right", "circle-question", "circle-info", "cross", "check-checked", "check-unchecked", "plus", "tick", "chart-line", "download", "edit", "warning", "fire", "settings", "srs-up", "srs-down", "sound-on", "sound-off", "trash"];
-        static customElements = [];
+        static #SCRIPT_VER = "0.4.4";
+        static #VERSION_NUM = 31;
+        static #names = ["arrow-up", "arrow-down", "chevron-up", "chevron-down", "chevron-left", "chevron-right", "circle-question", "circle-info", "cross", "check-checked", "check-unchecked", "plus", "tick", "chart-line", "download", "edit", "warning", "fire", "settings", "srs-up", "srs-down", "sound-on", "sound-off", "trash"];
+        static #customElements = [];
 
+        static get scriptVersion() { return this.#SCRIPT_VER }
+        static get SCRIPT_VER() { console.warn("Icons.SCRIPT_VER is deprecated. Use Icons.scriptVersion instead."); return this.#SCRIPT_VER; }
+        static get iconsVersion() { return this.#VERSION_NUM }
+        static get VERSION_NUM() { console.warn("Icons.VERSION_NUM is deprecated. Use Icons.iconsVersion instead."); return this.#VERSION_NUM; }
+
+        // Check if the current script version is newer than the one passed as argument
         static isNewerThan(otherVersion) {
             if (!otherVersion) return true;
-            let v1 = this.SCRIPT_VER.split(`.`).map(n => parseInt(n));
+            let v1 = this.#SCRIPT_VER.split(`.`).map(n => parseInt(n));
             let v2 = otherVersion.split(`.`).map(n => parseInt(n));
             return v1.reduce((prevVal, currVal, currIndex) => prevVal ?? (currVal === v2[currIndex] ? null : (currVal > (v2[currIndex] || 0))), null) || false;
         }
 
+        // Get the SVG element or outerHTML of an icon
         static customIconTxt(iconName) {
             return this.customIcon(iconName).outerHTML;
         }
         static customIcon(iconName) {
             let svgns = "http://www.w3.org/2000/svg";
-            let id = "custom-icon-v" + this.VERSION_NUM + "__" + iconName;
+            let id = "custom-icon-v" + this.#VERSION_NUM + "__" + iconName;
             let box = document.getElementById(id)?.getAttribute("viewBox") || "0 0 512 512";
 
             let icon = document.createElementNS(svgns, "svg");
@@ -46,21 +53,22 @@
             return icon;
         }
 
+        // Add a new icon to the custom icons list. Check forum thread for argument details.
         static addCustomIcons(newIcons) {
-            let customSVGSprites = document.getElementById("customSVGSprites__" + this.VERSION_NUM);
+            let customSVGSprites = document.getElementById("customSVGSprites__" + this.#VERSION_NUM);
             if(!customSVGSprites) return;
             if(newIcons == null || !Array.isArray(newIcons)) {
                 console.error("Invalid icons passed to Icons.addCustomIcons() - not an array. Please pass a 2D array of the form [['icon-name', 'path-data'], ['icon-name', 'path-data', [width, height] or just size]]");
                 return;
             }
 
-            let idBase = "custom-icon-v" + this.VERSION_NUM + "__";
+            let idBase = "custom-icon-v" + this.#VERSION_NUM + "__";
             for(let [name, path, box] of newIcons) {
-                if(names.includes(name)) {
+                if(this.#names.includes(name)) {
                     console.error(`Icon name "${name}" is already in use. Skipping.`);
                     continue;
                 } else {
-                    names.push(name);
+                    this.#names.push(name);
                 }
                 if(box != null && !Array.isArray(box)) box = [box, box];
                 // create symbol element and set outerHTML
@@ -70,14 +78,15 @@
                     <path d="${path}"/>
                 </symbol>
                 `;
-                customElements.push(customSymbol);
+                this.#customElements.push(customSymbol);
                 customSVGSprites.appendChild(customSymbol);
             }
         }
 
+        // Add the SVG sprites (+ custom added ones) to the html document
         static setUpSVGElements() {
-            if(document.getElementById("customSVGSprites__" + this.VERSION_NUM)) return;
-            if(this.VERSION_NUM == undefined) console.error("Icons.VERSION_NUM is undefined.");
+            if(document.getElementById("customSVGSprites__" + this.#VERSION_NUM)) return;
+            if(this.#VERSION_NUM == undefined) console.error("Icons.#VERSION_NUM is undefined.");
 
             let iconStyle = document.createElement("style");
             iconStyle.innerHTML = `
@@ -88,10 +97,10 @@
 
             let customSVGSprites = document.createElementNS(svgns, "svg");
             customSVGSprites.setAttribute("xmlns", "http://www.w3.org/2000/svg");
-            customSVGSprites.id = "customSVGSprites__" + this.VERSION_NUM;
+            customSVGSprites.id = "customSVGSprites__" + this.#VERSION_NUM;
             customSVGSprites.style.display = "none";
 
-            let idBase = "custom-icon-v" + this.VERSION_NUM + "__";
+            let idBase = "custom-icon-v" + this.#VERSION_NUM + "__";
             customSVGSprites.innerHTML = /*html*/ `
             <!-- Basic icons -->
             <symbol id="${idBase}arrow-up" viewBox="0 0 448 512">
@@ -171,22 +180,25 @@
             `;
 
             document.head.append(iconStyle, customSVGSprites);
+
+            this.#setUpCustomElements();
         }
 
-        static setUpCustomElements() {
-            if(this.customElements) this.customElements.forEach(el => {
-                document.getElementById("customSVGSprites__" + this.VERSION_NUM).appendChild(el);
+        static #setUpCustomElements() {
+            if(this.#customElements) this.#customElements.forEach(el => {
+                document.getElementById("customSVGSprites__" + this.#VERSION_NUM).appendChild(el);
             });
         }
     }
 
+    // Main initialization
+    
     Icons.setUpSVGElements();
 
     document.addEventListener("turbo:load", () => {
         Icons.setUpSVGElements();
-        Icons.setUpCustomElements();
     });
 
-    if (window.Icons && !Icons.isNewerThan(window.Icons.SCRIPT_VER)) return;
+    if (window.Icons && !Icons.isNewerThan(window.Icons.scriptVersion)) return;
     window.Icons = Icons;
 })();
