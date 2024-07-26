@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WK Custom Icons
 // @namespace    http://tampermonkey.net/
-// @version      0.4.4
+// @version      0.4.5
 // @description  Library with SVG icons and construction functions for use in scripts.
 // @author       leohumnew
 // @match        https://www.wanikani.com/*
@@ -15,7 +15,7 @@
     'use strict';
 
     class Icons {
-        static #SCRIPT_VER = "0.4.4";
+        static #SCRIPT_VER = "0.4.5";
         static #VERSION_NUM = 31;
         static #names = ["arrow-up", "arrow-down", "chevron-up", "chevron-down", "chevron-left", "chevron-right", "circle-question", "circle-info", "cross", "check-checked", "check-unchecked", "plus", "tick", "chart-line", "download", "edit", "warning", "fire", "settings", "srs-up", "srs-down", "sound-on", "sound-off", "trash"];
         static #customElements = [];
@@ -73,11 +73,9 @@
                 if(box != null && !Array.isArray(box)) box = [box, box];
                 // create symbol element and set outerHTML
                 let customSymbol = document.createElementNS("http://www.w3.org/2000/svg", "symbol");
-                customSymbol.outerHTML = `
-                <symbol id="${idBase}${name}" viewBox="0 0 ${box?.[0] || 512} ${box?.[1] || 512}">
-                    <path d="${path}"/>
-                </symbol>
-                `;
+                customSymbol.setAttribute('id', `${idBase}${name}`);
+                customSymbol.setAttribute('viewBox', `0 0 ${box?.[0] || 512} ${box?.[1] || 512}`);
+                customSymbol.innerHTML = `<path d="${path}"/>`;
                 this.#customElements.push(customSymbol);
                 customSVGSprites.appendChild(customSymbol);
             }
